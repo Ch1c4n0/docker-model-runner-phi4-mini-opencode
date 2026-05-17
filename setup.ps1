@@ -2,6 +2,7 @@
 # Requer Docker Desktop com Model Runner e GPU habilitados
 
 $MODEL = "hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M"
+#$MODEL = "docker.io/smollm2:latest"
 
 Write-Host "=== Docker Model Runner - Phi-4 Mini Instruct Setup ===" -ForegroundColor Cyan
 Write-Host "Modelo: $MODEL" -ForegroundColor Gray
@@ -52,4 +53,4 @@ Write-Host "Endpoint : http://localhost:12434/engines/llama.cpp/v1" -ForegroundC
 Write-Host "Modelo   : $MODEL" -ForegroundColor White
 Write-Host "VRAM     : ~2.5GB (RTX 3050 6GB)" -ForegroundColor White
 Write-Host "`nAbrindo OpenCode..." -ForegroundColor Cyan
-opencode
+#opencode

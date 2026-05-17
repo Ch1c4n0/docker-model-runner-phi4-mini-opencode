@@ -154,66 +154,57 @@ opencode
 
 ---
 
-### Step 5B — Global Config + Full Computer File Access (MCP)
+### Step 5B — Global Config for Terminal, TUI, and Web
 
-By default, OpenCode only sees files in the folder where it was started. To make it **global** (usable from any folder) and give it **access to your computer's files**, do two things:
+To use OpenCode globally (terminal, TUI, and web interface), copy the configuration to **both** locations:
 
-#### 1 — Copy config to global location
+#### 1 — Copy config to AppData (for terminal and TUI)
 
 ```powershell
 New-Item -ItemType Directory -Force "$env:APPDATA\opencode"
 Copy-Item "D:\Docker Model Runner\phi4\opencode.json" "$env:APPDATA\opencode\opencode.json"
 ```
 
-After this, you can run `opencode` from **any project folder** — it will always use the phi4-mini model.
-
-#### 2 — Add MCP Filesystem Server
-
-The **MCP Filesystem** server gives OpenCode read/write access to specific paths on your machine. Edit `%APPDATA%\opencode\opencode.json` and add the `mcp` block:
-
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "provider": { ... },
-  "model": "docker-model-runner/hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M",
-  "mcp": {
-    "filesystem": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "C:\\Users\\YourName",
-        "D:\\"
-      ]
-    }
-  }
-}
-```
-
-**What each line in `command` means:**
-
-| Line | Meaning |
-|---|---|
-| `"npx"` | Runs the package without needing a global install |
-| `"-y"` | Auto-confirms the first-time download (no prompt) |
-| `"@modelcontextprotocol/server-filesystem"` | The MCP server that exposes your filesystem to OpenCode |
-| `"C:\\Users\\YourName"` | First allowed root — OpenCode can read/write anything inside this path |
-| `"D:\\"` | Second allowed root — full D: drive accessible |
-
-> Add as many paths as you need. Each entry after the package name becomes an allowed root.
-> To allow the entire C: drive, add `"C:\\"`. To restrict to one project, use `"C:\\projects\\myapp"`.
-
-The package is downloaded automatically by `npx` on first run — no manual install needed.
-
-After saving, open a terminal in any project folder:
+#### 2 — Copy config to .config (required for web interface)
 
 ```powershell
-cd "C:\my-project"
-opencode
+New-Item -ItemType Directory -Force "$env:USERPROFILE\.config\opencode"
+Copy-Item "D:\Docker Model Runner\phi4\opencode.json" "$env:USERPROFILE\.config\opencode\opencode.json"
 ```
 
-OpenCode will now see all files in `C:\Users\YourName` and `D:\` and can read, edit, and create files anywhere within those paths.
+This creates the folder at `C:\Users\<your-username>\.config\opencode\opencode.json` (where `<your-username>` is your Windows username).
+
+> **Important:** The web interface requires the config in `~/.config/opencode/` to recognize custom providers. Without this, `opencode web` will not show the phi4-mini model.
+
+#### 3 — Verify both locations have the config
+
+```powershell
+# Check AppData (terminal/TUI)
+Get-ChildItem "$env:APPDATA\opencode\opencode.json"
+
+# Check .config (web interface)
+Get-ChildItem "$env:USERPROFILE\.config\opencode\opencode.json"
+
+# View current username
+whoami
+```
+
+Both files should exist with the same content. The `.config` folder will be in your user's home directory (e.g., `C:\Users\<your-username>\.config\opencode\`).
+
+#### 4 — Test all three interfaces
+
+```powershell
+# Terminal mode
+opencode run "Hello"
+
+# Interactive TUI
+opencode
+
+# Web interface
+opencode web --port 3000
+```
+
+All three should now recognize the **Phi-4 Mini Instruct (Local - GPU)** model.
 
 ---
 
