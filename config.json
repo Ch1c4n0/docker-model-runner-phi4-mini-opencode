@@ -32,22 +32,6 @@
         "D:\\"
       ],
       "enabled": true
-    },
-
-    "power-automate": {
-      "type": "local",
-      "command": [
-        "docker",
-        "run",
-        "--rm",
-        "-i",
-        "--env-file",
-        "D:\\MCP Power Automate\\.env",
-        "-v",
-        "D:/MCP Power Automate:/root/.mcp-power-automate",
-        "mcppowerautomate-mcp-power-automate-1"
-      ],
-      "enabled": true
     }
   }
 }
