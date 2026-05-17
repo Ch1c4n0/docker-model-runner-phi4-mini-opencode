@@ -154,9 +154,9 @@ opencode
 
 ---
 
-### Step 5B — Global Config for Terminal, TUI, and Web
+### Step 5B — Global Config for Terminal, TUI, and Web (⚠️ REQUIRED for web interface)
 
-To use OpenCode globally (terminal, TUI, and web interface), copy the configuration to **both** locations:
+To use OpenCode globally (terminal, TUI, and web interface), copy the configuration to **BOTH** locations. **Without the second location, the web interface will NOT work.**
 
 #### 1 — Copy config to AppData (for terminal and TUI)
 
@@ -165,7 +165,7 @@ New-Item -ItemType Directory -Force "$env:APPDATA\opencode"
 Copy-Item "D:\Docker Model Runner\phi4\opencode.json" "$env:APPDATA\opencode\opencode.json"
 ```
 
-#### 2 — Copy config to .config (required for web interface)
+#### 2 — ⚠️ Copy config to .config (REQUIRED for web interface to work)
 
 ```powershell
 New-Item -ItemType Directory -Force "$env:USERPROFILE\.config\opencode"
@@ -174,7 +174,7 @@ Copy-Item "D:\Docker Model Runner\phi4\opencode.json" "$env:USERPROFILE\.config\
 
 This creates the folder at `C:\Users\<your-username>\.config\opencode\opencode.json` (where `<your-username>` is your Windows username).
 
-> **Important:** The web interface requires the config in `~/.config/opencode/` to recognize custom providers. Without this, `opencode web` will not show the phi4-mini model.
+> ⚠️ **CRITICAL:** The web interface requires the config in `~/.config/opencode/` to recognize custom providers. **Without this file, `opencode web` will NOT show the phi4-mini model.** Both locations are necessary — one for terminal/TUI, one for web.
 
 #### 3 — Verify both locations have the config
 
@@ -182,10 +182,10 @@ This creates the folder at `C:\Users\<your-username>\.config\opencode\opencode.j
 # Check AppData (terminal/TUI)
 Get-ChildItem "$env:APPDATA\opencode\opencode.json"
 
-# Check .config (web interface)
+# Check .config (web interface) — THIS IS CRITICAL
 Get-ChildItem "$env:USERPROFILE\.config\opencode\opencode.json"
 
-# View current username
+# View your username
 whoami
 ```
 
@@ -200,11 +200,17 @@ opencode run "Hello"
 # Interactive TUI
 opencode
 
-# Web interface
+# Web interface (must have Step 5B.2 completed)
 opencode web --port 3000
 ```
 
 All three should now recognize the **Phi-4 Mini Instruct (Local - GPU)** model.
+
+> **If `opencode web` doesn't show the model:**
+> 1. Verify that `C:\Users\<your-username>\.config\opencode\opencode.json` exists
+> 2. Open the web interface and go to **Settings → Configure**
+> 3. If the model still doesn't appear, run the copy command from Step 5B.2 again
+> 4. Restart the browser and clear cache (or open an incognito window)
 
 ---
 
@@ -402,6 +408,9 @@ docker model rm   "hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M"      # remove 
 | OpenCode `ConfigInvalidError` | Use `npm` + `options.baseURL` in `opencode.json`, not `api` + `base` |
 | Model `ai/phi4-mini` not found | Correct name is `hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M` |
 | Very slow responses | GPU inference may not be active — check Docker Desktop GPU settings |
+| **`opencode web` doesn't show the model** | ⚠️ **The file must be in `~/.config/opencode/`**. Run this: `Copy-Item "$env:APPDATA\opencode\opencode.json" "$env:USERPROFILE\.config\opencode\opencode.json"` |
+| Model visible in terminal but not in web | Copy config to `~/.config/opencode/`, clear browser cache, restart browser |
+| Web interface shows error/blank | Open incognito/private window and check **Settings → Configure** for the model |
 
 ---
 ---
@@ -538,11 +547,11 @@ opencode
 
 ---
 
-### Passo 5B — Config Global + Acesso a Arquivos do Computador (MCP)
+### Passo 5B — Config Global + Web Interface + Acesso a Arquivos do Computador (MCP)
 
-Por padrão, o OpenCode só enxerga os arquivos da pasta onde foi iniciado. Para torná-lo **global** (usável em qualquer pasta) e dar acesso aos **arquivos do seu computador**, faça duas coisas:
+Por padrão, o OpenCode só enxerga os arquivos da pasta onde foi iniciado. Para torná-lo **global** (usável em qualquer pasta), habilitar a **interface web**, e dar acesso aos **arquivos do seu computador**, faça as seguintes etapas:
 
-#### 1 — Copiar o config para o local global
+#### 1 — Copiar o config para o local global (terminal e TUI)
 
 ```powershell
 New-Item -ItemType Directory -Force "$env:APPDATA\opencode"
@@ -551,7 +560,16 @@ Copy-Item "D:\Docker Model Runner\phi4\opencode.json" "$env:APPDATA\opencode\ope
 
 Após isso, você pode rodar `opencode` de **qualquer pasta de projeto** — ele sempre usará o modelo phi4-mini.
 
-#### 2 — Adicionar o servidor MCP de Filesystem
+#### 2 — ⚠️ Copiar config para `~/.config/opencode/` (OBRIGATÓRIO para web)
+
+**Sem este passo, `opencode web` NÃO funcionará.**
+
+```powershell
+New-Item -ItemType Directory -Force "$env:USERPROFILE\.config\opencode"
+Copy-Item "D:\Docker Model Runner\phi4\opencode.json" "$env:USERPROFILE\.config\opencode\opencode.json"
+```
+
+#### 3 — Adicionar o servidor MCP de Filesystem
 
 O servidor **MCP Filesystem** dá ao OpenCode acesso de leitura e escrita a caminhos específicos do seu computador. Edite `%APPDATA%\opencode\opencode.json` e adicione o bloco `mcp`:
 
@@ -590,14 +608,27 @@ O servidor **MCP Filesystem** dá ao OpenCode acesso de leitura e escrita a cami
 
 O pacote é baixado automaticamente pelo `npx` na primeira execução — sem instalação manual necessária.
 
-Após salvar, abra um terminal em qualquer pasta de projeto:
+#### 4 — Testar todas as três interfaces
 
 ```powershell
-cd "C:\meu-projeto"
+# Terminal direto
+opencode run "Olá, qual é sua versão?"
+
+# TUI interativo
+cd "C:\seu-projeto"
 opencode
+
+# Interface web (requer Passo 5B.2)
+opencode web --port 3000
 ```
 
-O OpenCode passará a enxergar todos os arquivos em `C:\Users\SeuUsuario` e `D:\` e poderá ler, editar e criar arquivos em qualquer caminho dentro dessas raízes.
+Todas as três devem reconhecer o modelo **Phi-4 Mini Instruct (Local - GPU)**.
+
+> **Se `opencode web` não mostra o modelo:**
+> 1. Verifique que `C:\Users\<seu-usuario>\.config\opencode\opencode.json` existe
+> 2. Abra a interface web e vá em **Settings → Configure**
+> 3. Se o modelo ainda não aparecer, rode novamente o comando de cópia do Passo 5B.2
+> 4. Reinicie o navegador e limpe o cache (ou abra uma janela incógnita)
 
 ---
 
@@ -795,6 +826,9 @@ docker model rm   "hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M"      # remover
 | OpenCode `ConfigInvalidError` | Use `npm` + `options.baseURL` no `opencode.json`, nao `api` + `base` |
 | Modelo `ai/phi4-mini` nao encontrado | O nome correto e `hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M` |
 | Respostas muito lentas | A GPU pode nao estar ativa — verifique as configuracoes de GPU no Docker Desktop |
+| **`opencode web` nao mostra o modelo** | ⚠️ **Crie o arquivo em `~/.config/opencode/`**. Execute: `Copy-Item "$env:APPDATA\opencode\opencode.json" "$env:USERPROFILE\.config\opencode\opencode.json"` |
+| Modelo visivel no terminal mas nao na web | Copie o config para `~/.config/opencode/`, limpe o cache do navegador, reinicie |
+| Interface web branca/erro | Abra uma janela incógnita e verifique **Settings → Configure** para ver o modelo |
 
 ---
 

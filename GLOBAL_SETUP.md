@@ -33,7 +33,7 @@ huggingface.co/unsloth/phi-4-mini-instruct-gguf:Q4_K_M  llama.cpp  completion  X
 
 ## Passo 2 — Criar/Atualizar os arquivos de configuração global
 
-O OpenCode precisa dos arquivos em **dois locais** para funcionar em todos os modos (terminal, TUI, web):
+O OpenCode precisa dos arquivos em **DOIS locais diferentes** para funcionar em todos os modos (terminal, TUI, web):
 
 ### Localização 1: `%APPDATA%\opencode\` (para terminal e TUI)
 
@@ -65,9 +65,15 @@ O OpenCode precisa dos arquivos em **dois locais** para funcionar em todos os mo
 '@ | Set-Content -Path "$env:APPDATA\opencode\opencode.json" -Force
 ```
 
-### Localização 2: `~/.config/opencode/` (para web interface)
+### Localização 2: `~/.config/opencode/` (para web interface) — ⚠️ OBRIGATÓRIO PARA A WEB
+
+Esta é a localização **CRÍTICA** para o `opencode web` funcionar:
 
 ```powershell
+# Criar a pasta
+New-Item -ItemType Directory -Path "$env:USERPROFILE\.config\opencode\" -Force | Out-Null
+
+# Copiar ou criar o arquivo de configuração
 @'
 {
   "$schema": "https://opencode.ai/config.json",
@@ -95,9 +101,11 @@ O OpenCode precisa dos arquivos em **dois locais** para funcionar em todos os mo
 '@ | Set-Content -Path "$env:USERPROFILE\.config\opencode\opencode.json" -Force
 ```
 
-Isso cria a pasta em `C:\Users\<seu-usuario>\.config\opencode\opencode.json` (onde `<seu-usuario>` é o nome do seu usuário Windows).
+Isso cria os arquivos em:
+- `C:\Users\<seu-usuario>\AppData\Roaming\opencode\opencode.json` (Localização 1)
+- `C:\Users\<seu-usuario>\.config\opencode\opencode.json` (Localização 2) ← **ESSENCIAL PARA WEB**
 
-> **Importante:** A interface web do OpenCode **requer** o arquivo em `~/.config/opencode/` para reconhecer providers customizados. Sem isso, `opencode web` não mostrará o modelo phi4-mini.
+> **⚠️ CRÍTICO:** Sem o arquivo em `~/.config/opencode/`, o `opencode web` **NÃO reconhecerá** o provider `docker-model-runner` e o modelo phi4-mini não aparecerá na interface web. **Ambas as localizações são necessárias.**
 
 ---
 
@@ -179,13 +187,29 @@ opencode
 
 Dentro do TUI, o phi4-mini estará disponível.
 
-### Na Web
+### Na Web — ⚠️ IMPORTANTE: Configuração Obrigatória
+
+> **ATENÇÃO:** Para o `opencode web` funcionar com o modelo local, você **DEVE** copiar os arquivos de configuração para `~/.config/opencode/`. Sem isso, o modelo não aparecerá na interface web.
+
+**Passo 1: Copiar os arquivos para `~/.config/opencode/`**
 
 ```powershell
-opencode web
+# Criar a pasta se não existir
+New-Item -ItemType Directory -Path "$env:USERPROFILE\.config\opencode\" -Force | Out-Null
+
+# Copiar o arquivo de configuração
+Copy-Item "$env:APPDATA\opencode\opencode.json" -Destination "$env:USERPROFILE\.config\opencode\opencode.json" -Force
+```
+
+**Passo 2: Executar o OpenCode Web**
+
+```powershell
+opencode web --port 3000
 ```
 
 Abre `http://localhost:3000` no navegador com o phi4-mini como modelo padrão.
+
+> **Verificação:** Após abrir a interface web, acesse **Settings → Configure** e verifique se o modelo `Phi-4 Mini Instruct (Local - GPU)` aparece na lista. Se não aparecer, repita o Passo 1 (cópia de arquivos).
 
 ---
 
@@ -199,16 +223,22 @@ Se não funcionar, verifique **nesta ordem**:
 - [ ] `Get-Content "$env:APPDATA\opencode\opencode.json"` mostra JSON válido?
   - **Não?** → Rode o comando do Passo 2 novamente
 
-- [ ] A API responde? `Invoke-RestMethod -Uri "http://localhost:12434/v1/chat/completions" ...`
+- [ ] A API responde? `Invoke-RestMethod -Uri "http://localhost:12434/engines/llama.cpp/v1/chat/completions" ...`
   - **Não?** → O Docker Model Runner pode não estar ativo. Reinicie o Docker Desktop.
 
-- [ ] O OpenCode vê o modelo? `opencode models | grep -i phi4`
+- [ ] O OpenCode vê o modelo no terminal? `opencode models | grep -i phi4`
   - **Não?** → Rode o comando do Passo 5 (limpar cache) e tente novamente
 
-- [ ] `opencode web` ainda não funciona?
+- [ ] ❌ **ANTES DE USAR `opencode web`, certifique-se de ter feito o Passo 2 — Localização 2!**
+  - Verifique se o arquivo existe: `Get-ChildItem "$env:USERPROFILE\.config\opencode\opencode.json"`
+  - **Arquivo não existe?** → Rode a segunda parte do Passo 2 (criar `~/.config/opencode/`)
+
+- [ ] `opencode web --port 3000` ainda não mostra o modelo?
+  - Verifique se o arquivo em `~/.config/opencode/opencode.json` existe e tem conteúdo válido
   - Feche o navegador completamente e abra de novo
-  - Tente em uma aba anônima
-  - Verifique se o modelo aparece em **Settings/Configure**
+  - Tente em uma aba anônima/privada
+  - Vá em **Settings → Configure** e confirme que o modelo aparece
+  - Se não aparecer, copie novamente o arquivo de `%APPDATA%\opencode\` para `~/.config\opencode\`
 
 ---
 
@@ -229,9 +259,9 @@ Se você quer **só um comando** para rodar tudo:
 
 ```powershell
 # 1. Certifique-se que o modelo está rodando
-docker model run "huggingface.co/unsloth/phi-4-mini-instruct-gguf:Q4_K_M" --detach
+docker model run "hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M" --detach
 
-# 2. Crie o config global (copie-cole tudo de uma vez)
+# 2. Crie o config em %APPDATA%\opencode\ (copie-cole tudo de uma vez)
 @'
 {
   "$schema": "https://opencode.ai/config.json",
@@ -240,11 +270,11 @@ docker model run "huggingface.co/unsloth/phi-4-mini-instruct-gguf:Q4_K_M" --deta
       "npm": "@ai-sdk/openai-compatible",
       "name": "Docker Model Runner",
       "options": {
-        "baseURL": "http://localhost:12434/v1",
+        "baseURL": "http://localhost:12434/engines/llama.cpp/v1",
         "apiKey": "docker-model-runner"
       },
       "models": {
-        "huggingface.co/unsloth/phi-4-mini-instruct-gguf:Q4_K_M": {
+        "hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M": {
           "name": "Phi-4 Mini Instruct (Local - GPU)",
           "limit": {
             "context": 16384,
@@ -254,12 +284,44 @@ docker model run "huggingface.co/unsloth/phi-4-mini-instruct-gguf:Q4_K_M" --deta
       }
     }
   },
-  "model": "docker-model-runner/huggingface.co/unsloth/phi-4-mini-instruct-gguf:Q4_K_M"
+  "model": "docker-model-runner/hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M"
 }
 '@ | Set-Content -Path "$env:APPDATA\opencode\opencode.json" -Force
 
-# 3. Abra o OpenCode Web
-opencode web
+# 3. Crie o config em ~/.config/opencode/ (ESSENCIAL PARA WEB)
+New-Item -ItemType Directory -Path "$env:USERPROFILE\.config\opencode\" -Force | Out-Null
+
+@'
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "docker-model-runner": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Docker Model Runner",
+      "options": {
+        "baseURL": "http://localhost:12434/engines/llama.cpp/v1",
+        "apiKey": "docker-model-runner"
+      },
+      "models": {
+        "hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M": {
+          "name": "Phi-4 Mini Instruct (Local - GPU)",
+          "limit": {
+            "context": 16384,
+            "output": 4096
+          }
+        }
+      }
+    }
+  },
+  "model": "docker-model-runner/hf.co/unsloth/Phi-4-mini-instruct-GGUF:Q4_K_M"
+}
+'@ | Set-Content -Path "$env:USERPROFILE\.config\opencode\opencode.json" -Force
+
+# 4. Teste no terminal
+opencode run "Olá!"
+
+# 5. Abra a interface web
+opencode web --port 3000
 ```
 
-Pronto! O phi4-mini estará disponível globalmente.
+Pronto! O phi4-mini estará disponível globalmente em terminal, TUI e web.
